@@ -1,0 +1,60 @@
+# 2026-10-23 22:09:12 by RouterOS 7.23.7
+# system id = Qbbi75h9/MO
+#
+/interface bridge
+add name=loopback
+/interface ethernet
+set [ find default-name=ether1 ] disable-running-check=no
+set [ find default-name=ether2 ] disable-running-check=no
+set [ find default-name=ether3 ] disable-running-check=no
+set [ find default-name=ether4 ] disable-running-check=no
+/interface vlan
+add interface=ether1 name=vlan10 vlan-id=10
+add interface=ether1 name=vlan100 vlan-id=100
+/ip ipsec profile
+add dh-group=ecp256 enc-algorithm=aes-256 hash-algorithm=sha256 name=\
+    lab-profile
+/ip ipsec peer
+add address=10.255.0.3/32 exchange-mode=ike2 local-address=10.255.0.1 name=\
+    to-core profile=lab-profile
+/ip ipsec proposal
+add auth-algorithms=sha256 enc-algorithms=aes-256-cbc name=lab-proposal \
+    pfs-group=ecp256
+/routing ospf instance
+add name=ospf1 router-id=1.1.1.1
+/routing ospf area
+add instance=ospf1 name=backbone
+/system logging action
+add name=ubuntu remote=192.168.100.20 src-address=10.255.0.1 target=remote
+/ip address
+add address=10.0.0.1/30 interface=ether2 network=10.0.0.0
+add address=192.168.10.1/24 interface=vlan10 network=192.168.10.0
+add address=192.168.100.1/24 interface=vlan100 network=192.168.100.0
+add address=10.255.0.1 interface=loopback network=10.255.0.1
+/ip dhcp-client
+add interface=ether1 name=client1
+/ip firewall filter
+add action=drop chain=forward comment="users cant reach mgmt" dst-address=\
+    192.168.100.0/24 src-address=192.168.10.0/24
+add action=drop chain=input comment="users cant reach mgmt" dst-address=\
+    192.168.100.0/24 src-address=192.168.10.0/24
+add action=accept chain=input comment="snmp from ubuntu" dst-port=161 \
+    protocol=udp src-address=192.168.100.20
+add action=drop chain=input comment="snmp from others" dst-port=161 protocol=\
+    udp
+/ip ipsec identity
+add peer=to-core
+/ip ipsec policy
+add dst-address=172.16.0.0/24 peer=to-core proposal=lab-proposal src-address=\
+    192.168.10.0/24 tunnel=yes
+/routing ospf interface-template
+add area=backbone networks=10.0.0.0/30
+add area=backbone networks=192.168.10.0/24 passive
+add area=backbone networks=10.255.0.1/32 passive
+add area=backbone networks=192.168.100.0/24 passive
+/snmp
+set enabled=yes
+/system logging
+add
+add action=ubuntu topics=info,error,warning,ipsec
+add action=ubuntu topics=debug

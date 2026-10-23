@@ -1,0 +1,41 @@
+# 2026-10-23 22:14:02 by RouterOS 7.23.7
+# system id = oG44O2AxfwA
+#
+/interface bridge
+add name=loopback
+/interface ethernet
+set [ find default-name=ether1 ] disable-running-check=no
+set [ find default-name=ether2 ] disable-running-check=no
+set [ find default-name=ether3 ] disable-running-check=no
+set [ find default-name=ether4 ] disable-running-check=no
+/routing ospf instance
+add name=ospf1 router-id=2.2.2.2
+/routing ospf area
+add instance=ospf1 name=backbone
+/ip address
+add address=10.0.0.2/30 interface=ether1 network=10.0.0.0
+add address=10.0.0.5/30 interface=ether2 network=10.0.0.4
+add address=10.255.0.2 interface=loopback network=10.255.0.2
+/ip dhcp-client
+add interface=ether1 name=client1
+/ip firewall filter
+add action=accept chain=input comment="snmp from ubuntu" dst-port=161 \
+    protocol=udp src-address=192.168.100.20
+add action=accept chain=input comment="snmp from ubuntu" dst-port=161 \
+    protocol=udp src-address=192.168.100.20
+add action=accept chain=input comment="snmp from ubuntu" dst-port=161 \
+    protocol=udp src-address=192.168.100.20
+add action=accept chain=input comment="snmp from ubuntu" dst-port=161 \
+    protocol=udp src-address=192.168.100.20
+add action=accept chain=input comment="snmp from ubuntu" dst-port=161 \
+    protocol=udp src-address=192.168.100.20
+add action=drop chain=input comment="snmp from others" dst-port=161 protocol=\
+    udp
+/routing ospf interface-template
+add area=backbone networks=10.0.0.0/30
+add area=backbone networks=10.0.0.4/30
+add area=backbone networks=10.255.0.2/32 passive
+/snmp
+set enabled=yes
+/system identity
+set name=aggregation
